@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications-microservice
+  labels:
+    app: notifications-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notifications-microservice
+  template:
+    metadata:
+      labels:
+        app: notifications-microservice
+    spec:
+      containers:
+        - name: notifications-microservice
+          image: juanhoyos/microservice:notifications-v1
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SERVER_PORT
+              value: "8083"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
