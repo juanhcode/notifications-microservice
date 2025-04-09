@@ -11,6 +11,6 @@ public class Notification {
 
     @GetMapping
     public String getNotification() {
-        return "Hello, this is a notification!";
+        return "Hello, this is a notification!!";
     }
 }
