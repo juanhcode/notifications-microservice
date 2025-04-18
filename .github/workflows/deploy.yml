@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE_NAME: juanhoyos/microservice:notifications-v1
+  IMAGE_NAME: juanhoyos/microservice:notifications-v2
   REGISTRY: docker.io
 
 jobs:

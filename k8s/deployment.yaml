@@ -16,12 +16,27 @@ spec:
     spec:
       containers:
         - name: notifications-microservice
-          image: juanhoyos/microservice:notifications-v1
+          image: juanhoyos/microservice:notifications-v2
           ports:
             - containerPort: 8083
           env:
             - name: SERVER_PORT
               value: "8083"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: password
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: url
           resources:
             limits:
               memory: "512Mi"
