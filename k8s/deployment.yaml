@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: notifications-microservice
-          image: juanhoyos/microservice:notifications-v2
+          image: juanhoyos/microservice:notifications-v3
           ports:
             - containerPort: 8083
           env:
@@ -37,6 +37,36 @@ spec:
                 secretKeyRef:
                   name: credentials
                   key: url
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsAccessKey
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsSecretKey
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsRegion
+            - name: AWS_SQS_QUEUE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsSqsQueueUrlOrders
+            - name: AWS_SNS_TOPIC_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsSnsTopicArnOrders
+            - name: AWS_SQS_QUEUE_URL_PUBLISHER
+              valueFrom:
+                secretKeyRef:
+                  name: credentials
+                  key: awsSqsQueueUrlPublisherNotifications
           resources:
             limits:
               memory: "512Mi"
