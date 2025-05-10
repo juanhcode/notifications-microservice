@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: notifications-microservice
-          image: juanhoyos/microservice:notifications-v4
+          image: juanhoyos/microservice:notifications-v3
           ports:
             - containerPort: 8083
           env:
