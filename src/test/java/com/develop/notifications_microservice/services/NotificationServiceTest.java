@@ -1,4 +1,4 @@
-package com.develop.notifications_microservice;
+package com.develop.notifications_microservice.services;
 
 import com.develop.notifications_microservice.application.use_cases.NotificationService;
 import com.develop.notifications_microservice.domain.models.Notification;

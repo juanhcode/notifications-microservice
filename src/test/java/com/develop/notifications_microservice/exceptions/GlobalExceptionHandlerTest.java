@@ -1,4 +1,4 @@
-package com.develop.notifications_microservice;
+package com.develop.notifications_microservice.exceptions;
 
 import com.develop.notifications_microservice.presentation.exceptions.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;

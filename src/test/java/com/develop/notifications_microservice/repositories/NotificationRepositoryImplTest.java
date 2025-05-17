@@ -1,6 +1,8 @@
-package com.develop.notifications_microservice.infrastructure.repositories;
+package com.develop.notifications_microservice.repositories;
 
 import com.develop.notifications_microservice.domain.models.Notification;
+import com.develop.notifications_microservice.infrastructure.repositories.JpaNotificationRepository;
+import com.develop.notifications_microservice.infrastructure.repositories.NotificationRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
