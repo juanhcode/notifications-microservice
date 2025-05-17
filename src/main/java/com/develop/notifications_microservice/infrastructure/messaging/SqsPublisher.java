@@ -39,6 +39,7 @@ public class SqsPublisher {
             SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(convertNotificationToJson(notification))
+                    .messageGroupId("notification-group")
                     .build();
 
             SendMessageResponse sendMsgResponse = sqsClient.sendMessage(sendMsgRequest);

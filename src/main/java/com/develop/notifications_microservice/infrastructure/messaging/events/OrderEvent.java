@@ -9,6 +9,5 @@ import lombok.Setter;
 public class OrderEvent {
     private Long orderId;
     private Long userId;
-    private Long purchaseId;
-    private String description;
+    private String paymentStatus;
 }

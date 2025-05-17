@@ -3,6 +3,7 @@ package com.develop.notifications_microservice.infrastructure.messaging;
 import com.develop.notifications_microservice.infrastructure.messaging.events.OrderEvent;
 import com.develop.notifications_microservice.domain.interfaces.NotificationServicePort;
 import com.develop.notifications_microservice.domain.models.Notification;
+import com.develop.notifications_microservice.infrastructure.messaging.events.SnsEnvelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -45,19 +46,26 @@ public class SqsConsumer {
 
         sqsClient.receiveMessage(request).messages().forEach(message -> {
             try {
-                // Convierte el mensaje de SQS en un objeto de tipo OrderEvent
-                OrderEvent orderEvent = objectMapper.readValue(message.body(), OrderEvent.class);
+                System.out.println("📩 Mensaje recibido: " + message.body());
+                // Primero deserializamos el SNS Envelope
+                SnsEnvelope snsEnvelope = objectMapper.readValue(message.body(), SnsEnvelope.class);
 
-                // Procesa el OrderEvent
+                System.out.println("📩 Mensaje SNS: " + snsEnvelope.getMessage());
+
+                // Ahora deserializamos el contenido real del mensaje SNS (que es tu OrderEvent)
+                OrderEvent orderEvent = objectMapper.readValue(snsEnvelope.getMessage(), OrderEvent.class);
+
+                // Procesamos el OrderEvent
                 procesarOrderEvent(orderEvent);
 
-                // Elimina el mensaje de la cola SQS después de procesarlo
+                // Eliminamos el mensaje de la cola
                 deleteMessage(message.receiptHandle());
             } catch (Exception e) {
                 System.err.println("❌ Error procesando mensaje: " + e.getMessage());
             }
         });
     }
+
 
     private void deleteMessage(String receiptHandle) {
         DeleteMessageRequest deleteRequest = DeleteMessageRequest.builder()
@@ -71,9 +79,9 @@ public class SqsConsumer {
         // 1. Crear la notificación
         Notification notification = new Notification();
         notification.setUserId(orderEvent.getUserId());
-        notification.setPurchaseId(orderEvent.getPurchaseId());
-        notification.setDescription("Compra realizada: " + orderEvent.getDescription());
-        notification.setStatus(false); // Puedes ajustarlo según tus necesidades
+        notification.setPurchaseId(orderEvent.getOrderId());
+        notification.setDescription("Estado del pago: " + orderEvent.getPaymentStatus());
+        notification.setStatus(true); // O true si ya quieres marcarla como leída
 
         // 2. Guardar la notificación en la base de datos
         notificationServicePort.createNotification(notification);
@@ -81,4 +89,5 @@ public class SqsConsumer {
         // Log para confirmar la creación de la notificación
         System.out.println("✅ Notificación creada y guardada en la base de datos");
     }
+
 }
