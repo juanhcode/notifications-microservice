@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: notifications-microservice
-          image: juanhoyos/microservice:notifications-v5
+          image: juanhoyos/microservice:notifications-v6
           ports:
             - containerPort: 8083
           env:
@@ -74,17 +74,3 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8083
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8083
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            failureThreshold: 3
