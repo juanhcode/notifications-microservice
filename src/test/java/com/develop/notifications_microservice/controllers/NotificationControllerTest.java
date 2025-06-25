@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import org.springframework.http.ResponseEntity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -56,8 +57,8 @@ class NotificationControllerTest {
     void getByUser_shouldReturnNotificationsList() {
         Long userId = 5L;
         List<Notification> mockList = List.of(
-                new Notification(1L, userId, "desc1", 10L, true),
-                new Notification(2L, userId, "desc2", 11L, true)
+                new Notification(1L, userId, "desc1", 10L, true, LocalDateTime.now(), "Título 1"),
+                new Notification(2L, userId, "desc2", 11L, true, LocalDateTime.now(), "Título 2")
         );
         when(service.getNotificationsByUserId(userId)).thenReturn(mockList);
 

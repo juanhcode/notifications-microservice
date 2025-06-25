@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 @Entity
 @Table(name = "notification")
 @Getter
@@ -20,4 +21,11 @@ public class Notification {
     private String description;
     private Long purchaseId;
     private boolean status;
+    private LocalDateTime createdOn;
+    private String title;
+
+    @PrePersist
+    protected void onCreate() {
+        createdOn = LocalDateTime.now();
+    }
 }

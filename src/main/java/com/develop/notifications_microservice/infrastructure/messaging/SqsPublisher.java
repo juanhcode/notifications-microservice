@@ -36,10 +36,16 @@ public class SqsPublisher {
 
     public void publishNotification(Notification notification) {
         try {
+            // Usar el orderId como fallback si el ID de notificación no está disponible
+            String deduplicationId = notification.getId() != null ?
+                    notification.getId().toString() :
+                    "order-" + notification.getPurchaseId();
+
             SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
                     .queueUrl(queueUrl)
                     .messageBody(convertNotificationToJson(notification))
                     .messageGroupId("notification-group")
+                    .messageDeduplicationId(deduplicationId)
                     .build();
 
             SendMessageResponse sendMsgResponse = sqsClient.sendMessage(sendMsgRequest);

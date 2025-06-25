@@ -36,7 +36,7 @@ public class SqsConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 1000)
     public void leerMensajes() {
         ReceiveMessageRequest request = ReceiveMessageRequest.builder()
                 .queueUrl(queueUrl)
@@ -46,6 +46,12 @@ public class SqsConsumer {
 
         sqsClient.receiveMessage(request).messages().forEach(message -> {
             try {
+                System.out.println("📩 Mensaje recibido:");
+                System.out.println("🟡 ID: " + message.messageId());
+                System.out.println("🟡 Cuerpo: " + message.body());
+                System.out.println("🟡 Atributos: " + message.attributes());
+                System.out.println("🟡 Atributos personalizados: " + message.messageAttributes());
+
                 System.out.println("📩 Mensaje recibido: " + message.body());
                 // Primero deserializamos el SNS Envelope
                 SnsEnvelope snsEnvelope = objectMapper.readValue(message.body(), SnsEnvelope.class);
@@ -54,6 +60,11 @@ public class SqsConsumer {
 
                 // Ahora deserializamos el contenido real del mensaje SNS (que es tu OrderEvent)
                 OrderEvent orderEvent = objectMapper.readValue(snsEnvelope.getMessage(), OrderEvent.class);
+
+                System.out.println("🟢 OrderEvent recibido:");
+                System.out.println("    🧾 Order ID: " + orderEvent.getOrderId());
+                System.out.println("    👤 User ID: " + orderEvent.getUserId());
+                System.out.println("    💳 Payment Status: " + orderEvent.getPaymentStatusName());
 
                 // Procesamos el OrderEvent
                 procesarOrderEvent(orderEvent);
@@ -76,18 +87,65 @@ public class SqsConsumer {
     }
 
     private void procesarOrderEvent(OrderEvent orderEvent) {
-        // 1. Crear la notificación
+        // Crear la notificación con título y descripción según los estados
         Notification notification = new Notification();
         notification.setUserId(orderEvent.getUserId());
         notification.setPurchaseId(orderEvent.getOrderId());
-        notification.setDescription("Estado del pago: " + orderEvent.getPaymentStatus());
-        notification.setStatus(true); // O true si ya quieres marcarla como leída
+        notification.setStatus(false); // Por defecto no leída
 
-        // 2. Guardar la notificación en la base de datos
+        // Configurar título y descripción según el estado de delivery
+        String deliveryStatus = orderEvent.getStatusDeliveryName();
+        String paymentStatus = orderEvent.getPaymentStatusName();
+
+        switch(deliveryStatus) {
+            case "Processing":
+                notification.setTitle("Pedido en proceso");
+                notification.setDescription("Tu pedido #" + orderEvent.getOrderId() + " está siendo preparado.");
+                break;
+            case "Shipped":
+                notification.setTitle("Pedido enviado");
+                notification.setDescription("Tu pedido #" + orderEvent.getOrderId() + " ha sido enviado.");
+                break;
+            case "Delivered":
+                notification.setTitle("Pedido entregado");
+                notification.setDescription("¡Tu pedido #" + orderEvent.getOrderId() + " ha sido entregado!");
+                break;
+            default:
+                notification.setTitle("Actualización de pedido");
+                notification.setDescription("Tu pedido #" + orderEvent.getOrderId() + " tiene un nuevo estado: " + deliveryStatus);
+        }
+
+        // Si el estado de pago es importante, podemos agregarlo a la descripción
+        if (!"Paid".equals(paymentStatus)) {
+            notification.setDescription(notification.getDescription() +
+                    " | Estado de pago: " + getPaymentStatusDescription(paymentStatus));
+        }
+
+        // Guardar la notificación en la base de datos
         notificationServicePort.createNotification(notification);
 
-        // Log para confirmar la creación de la notificación
         System.out.println("✅ Notificación creada y guardada en la base de datos");
+    }
+
+    private String getPaymentStatusDescription(String paymentStatus) {
+        switch(paymentStatus) {
+            case "Pending":
+                return "Pendiente de pago";
+            case "Failed":
+                return "Pago fallido";
+            case "Refunded":
+                return "Reembolsado";
+            case "Partially Refunded":
+                return "Reembolsado parcialmente";
+            case "Cancelled":
+                return "Pago cancelado";
+            case "On Hold":
+                return "Pago en espera";
+            case "Processing":
+                return "Pago en proceso";
+            default:
+                return paymentStatus;
+        }
     }
 
 }

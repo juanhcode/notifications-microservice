@@ -1,20 +1,21 @@
 package com.develop.notifications_microservice.services;
-
 import com.develop.notifications_microservice.application.use_cases.NotificationService;
-import com.develop.notifications_microservice.domain.models.Notification;
 import com.develop.notifications_microservice.domain.interfaces.NotificationPersistencePort;
+import com.develop.notifications_microservice.domain.models.Notification;
 import com.develop.notifications_microservice.infrastructure.messaging.SqsPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -32,7 +33,15 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        notification = new Notification(1L, 1L, "Test Description", 2L, true);
+        notification = new Notification(
+                1L,
+                1L,
+                "Test Description",
+                2L,
+                true,
+                LocalDateTime.now(),
+                "Título de prueba"
+        );
     }
 
     @Test
@@ -64,20 +73,14 @@ class NotificationServiceTest {
 
     @Test
     void testCreateNotification_Success() {
-        // Simulamos que el repositorio guarda la notificación y retorna la misma
         when(persistencePort.save(notification)).thenReturn(notification);
-
-        // Simulamos que SQS publica la notificación
         doNothing().when(sqsPublisher).publishNotification(notification);
 
-        // Llamamos al método del servicio
         Notification createdNotification = notificationService.createNotification(notification);
 
-        // Verificamos que el repositorio y SQS hayan sido llamados correctamente
         verify(persistencePort, times(1)).save(notification);
         verify(sqsPublisher, times(1)).publishNotification(notification);
 
-        // Verificamos que la notificación devuelta es la misma que la creada
         assertNotNull(createdNotification);
         assertEquals(notification, createdNotification);
     }
@@ -85,21 +88,15 @@ class NotificationServiceTest {
     @Test
     void testGetNotificationsByUserId() {
         Long userId = 1L;
-
-        // Simulamos que el repositorio devuelve una lista de notificaciones
         List<Notification> notifications = Collections.singletonList(notification);
         when(persistencePort.findByUserId(userId)).thenReturn(notifications);
 
-        // Llamamos al método del servicio
         List<Notification> result = notificationService.getNotificationsByUserId(userId);
 
-        // Verificamos que la lista de notificaciones devuelta no sea vacía
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals(notification, result.get(0));
-
-        // Verificamos que el repositorio haya sido llamado correctamente
         verify(persistencePort, times(1)).findByUserId(userId);
     }
 }

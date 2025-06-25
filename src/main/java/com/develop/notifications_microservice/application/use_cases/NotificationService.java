@@ -21,10 +21,10 @@ public class NotificationService implements NotificationServicePort {
 
     @Override
     public Notification createNotification(Notification notification) {
-        // Guardar la notificación en la base de datos
+        // 1. Primero guardar para obtener el ID
         Notification savedNotification = persistencePort.save(notification);
 
-        // Enviar la notificación a SQS
+        // 2. Ahora publicar con el ID generado
         sqsPublisher.publishNotification(savedNotification);
 
         return savedNotification;

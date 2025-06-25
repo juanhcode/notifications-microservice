@@ -46,6 +46,8 @@ public class NotificationRepositoryImpl implements NotificationPersistencePort {
         e.setDescription(n.getDescription());
         e.setPurchaseId(n.getPurchaseId());
         e.setStatus(n.isStatus());
+        e.setTitle(n.getTitle());
+        e.setCreatedOn(n.getCreatedOn()); // Asegúrate de incluir este campo
         return e;
     }
 
@@ -56,6 +58,8 @@ public class NotificationRepositoryImpl implements NotificationPersistencePort {
         n.setDescription(e.getDescription());
         n.setPurchaseId(e.getPurchaseId());
         n.setStatus(e.isStatus());
+        n.setTitle(e.getTitle());
+        n.setCreatedOn(e.getCreatedOn());
         return n;
     }
 }
