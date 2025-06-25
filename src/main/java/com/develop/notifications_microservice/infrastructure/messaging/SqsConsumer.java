@@ -46,25 +46,11 @@ public class SqsConsumer {
 
         sqsClient.receiveMessage(request).messages().forEach(message -> {
             try {
-                System.out.println("📩 Mensaje recibido:");
-                System.out.println("🟡 ID: " + message.messageId());
-                System.out.println("🟡 Cuerpo: " + message.body());
-                System.out.println("🟡 Atributos: " + message.attributes());
-                System.out.println("🟡 Atributos personalizados: " + message.messageAttributes());
-
-                System.out.println("📩 Mensaje recibido: " + message.body());
                 // Primero deserializamos el SNS Envelope
                 SnsEnvelope snsEnvelope = objectMapper.readValue(message.body(), SnsEnvelope.class);
 
-                System.out.println("📩 Mensaje SNS: " + snsEnvelope.getMessage());
-
                 // Ahora deserializamos el contenido real del mensaje SNS (que es tu OrderEvent)
                 OrderEvent orderEvent = objectMapper.readValue(snsEnvelope.getMessage(), OrderEvent.class);
-
-                System.out.println("🟢 OrderEvent recibido:");
-                System.out.println("    🧾 Order ID: " + orderEvent.getOrderId());
-                System.out.println("    👤 User ID: " + orderEvent.getUserId());
-                System.out.println("    💳 Payment Status: " + orderEvent.getPaymentStatusName());
 
                 // Procesamos el OrderEvent
                 procesarOrderEvent(orderEvent);
