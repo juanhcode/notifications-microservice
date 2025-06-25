@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -104,4 +106,44 @@ class SqsConsumerTest {
         assertTrue(n.getDescription().startsWith(expectedDescStart) || n.getDescription().contains(expectedDescStart));
         assertEquals(expectedStatus, n.isStatus());
     }
+
+    @Test
+    void leerMensajes_shouldProcessValidMessage() throws Exception {
+        String snsJson = """
+    {
+      "Type": "Notification",
+      "MessageId": "msg-id",
+      "TopicArn": "arn:topic",
+      "Message": "{\\"orderId\\": 123, \\"userId\\": 10, \\"statusDeliveryName\\": \\"Processing\\", \\"paymentStatusName\\": \\"Pending\\"}",
+      "Timestamp": "2023-01-01T00:00:00Z"
+    }
+    """;
+
+        Message sqsMessage = Message.builder()
+                .body(snsJson)
+                .receiptHandle("receipt-123")
+                .build();
+
+        ReceiveMessageResponse response = ReceiveMessageResponse.builder()
+                .messages(sqsMessage)
+                .build();
+
+        SqsClient mockClient = mock(SqsClient.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        when(mockClient.receiveMessage(any(ReceiveMessageRequest.class))).thenReturn(response);
+        when(mockClient.deleteMessage(any(DeleteMessageRequest.class))).thenReturn(DeleteMessageResponse.builder().build());
+
+        SqsConsumer consumer = new SqsConsumer(
+                "access", "secret", "queueUrl", notificationServicePort, objectMapper
+        );
+
+        TestUtils.setField(consumer, "sqsClient", mockClient);
+
+        consumer.leerMensajes();
+
+        verify(notificationServicePort, times(1)).createNotification(any(Notification.class));
+        verify(mockClient, times(1)).deleteMessage(any(DeleteMessageRequest.class));
+    }
+
 }
