@@ -1,10 +1,7 @@
 package com.develop.notifications_microservice.domain.models;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 @Entity
@@ -13,6 +10,8 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode  // ✅ Agrega comparación por contenido (necesario para assertEquals)
+@ToString           // ✅ Opcional: útil si usas assertTrue(toString().contains(...))
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
