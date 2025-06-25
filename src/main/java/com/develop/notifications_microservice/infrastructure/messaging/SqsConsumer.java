@@ -86,7 +86,7 @@ public class SqsConsumer {
         sqsClient.deleteMessage(deleteRequest);
     }
 
-    private void procesarOrderEvent(OrderEvent orderEvent) {
+    public void procesarOrderEvent(OrderEvent orderEvent) {
         // Crear la notificación con título y descripción según los estados
         Notification notification = new Notification();
         notification.setUserId(orderEvent.getUserId());
