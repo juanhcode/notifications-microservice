@@ -2,6 +2,7 @@ package com.develop.notifications_microservice.infrastructure.messaging;
 
 import com.develop.notifications_microservice.domain.models.Notification;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -25,6 +26,13 @@ public class SqsPublisher {
     @Value("${aws.sqs.queueUrlPublisher}")
     private String queueUrl;
 
+    @Autowired(required = false)
+    public SqsPublisher(SqsClient sqsClient, String queueUrl) {
+        this.sqsClient = sqsClient;
+        this.queueUrl = queueUrl;
+    }
+
+    @Autowired
     public SqsPublisher(@Value("${aws.region}") String region,
                         @Value("${aws.accessKey}") String accessKey,
                         @Value("${aws.secretKey}") String secretKey) {
