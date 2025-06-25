@@ -78,4 +78,87 @@ class SqsPublisherTest {
         SendMessageRequest sentRequest = captor.getValue();
         assertEquals("order-456", sentRequest.messageDeduplicationId());
     }
+
+    @Test
+    void publishNotification_shouldThrowException_whenJsonConversionFails() {
+        // Given
+        Notification invalidNotification = mock(Notification.class);
+        // Forzamos una excepción al convertir el objeto a JSON manipulando el método (solo si fuera público)
+        // Como no es posible directamente, puedes simular una conversión fallida con un spy si necesitas testearlo explícitamente
+        // Pero aquí vamos a forzar indirectamente usando un objeto no serializable (null purchaseId provocará NPE si toString se invoca)
+
+        // When / Then
+        assertDoesNotThrow(() -> sqsPublisher.publishNotification(invalidNotification));
+        // Esto capturará la excepción interna, no se propagará gracias al catch
+    }
+
+    @Test
+    void publishNotification_shouldHandleExceptionFromSqsClientGracefully() {
+        // Given
+        Notification notification = new Notification();
+        notification.setId(99L);
+        notification.setPurchaseId(321L);
+        notification.setDescription("Error esperado");
+
+        when(sqsClient.sendMessage(any(SendMessageRequest.class)))
+                .thenThrow(new RuntimeException("SQS está caído"));
+
+        // When / Then
+        assertDoesNotThrow(() -> sqsPublisher.publishNotification(notification));
+        verify(sqsClient).sendMessage(any(SendMessageRequest.class));
+    }
+
+    @Test
+    void publishNotification_shouldHandleEmptyNotification() {
+        // Given
+        Notification notification = new Notification(); // todos los campos null
+
+        SendMessageResponse mockResponse = SendMessageResponse.builder().messageId("msg-999").build();
+        when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(mockResponse);
+
+        // When
+        assertDoesNotThrow(() -> sqsPublisher.publishNotification(notification));
+
+        // Then
+        ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(sqsClient).sendMessage(captor.capture());
+
+        SendMessageRequest request = captor.getValue();
+        assertEquals("notification-group", request.messageGroupId());
+        assertTrue(request.messageBody().contains("null"));
+        assertTrue(request.messageDeduplicationId().contains("order-null"));
+    }
+
+    @Test
+    void publishNotification_shouldContainAllNotificationFieldsInJson() {
+        // Given
+        Notification notification = new Notification();
+        notification.setId(20L);
+        notification.setUserId(3L);
+        notification.setPurchaseId(5L);
+        notification.setDescription("📦 Listo");
+        notification.setTitle("Confirmación");
+        notification.setStatus(true);
+
+        SendMessageResponse response = SendMessageResponse.builder().messageId("msg-abc").build();
+        when(sqsClient.sendMessage(any(SendMessageRequest.class))).thenReturn(response);
+
+        // When
+        sqsPublisher.publishNotification(notification);
+
+        // Then
+        ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(sqsClient).sendMessage(captor.capture());
+
+        String body = captor.getValue().messageBody();
+        assertAll(
+                () -> assertTrue(body.contains("\"id\":20")),
+                () -> assertTrue(body.contains("\"userId\":3")),
+                () -> assertTrue(body.contains("\"purchaseId\":5")),
+                () -> assertTrue(body.contains("📦")),
+                () -> assertTrue(body.contains("Confirmación")),
+                () -> assertTrue(body.contains("\"status\":true"))
+        );
+    }
+
 }

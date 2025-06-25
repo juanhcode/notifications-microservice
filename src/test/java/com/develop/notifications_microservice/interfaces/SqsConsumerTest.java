@@ -20,18 +20,10 @@ class SqsConsumerTest {
     @Mock
     private NotificationServicePort notificationServicePort;
 
-    @InjectMocks
-    private SqsConsumer sqsConsumer = new SqsConsumer(
-            "dummyAccessKey",
-            "dummySecretKey",
-            "dummyQueueUrl",
-            mock(NotificationServicePort.class),
-            new ObjectMapper()
-    );
+    private SqsConsumer sqsConsumer;
 
     @BeforeEach
     void setUp() {
-        // Reemplazar el mock real dentro del InjectMocks si es necesario
         sqsConsumer = new SqsConsumer(
                 "dummyAccessKey",
                 "dummySecretKey",
@@ -42,29 +34,74 @@ class SqsConsumerTest {
     }
 
     @Test
-    void procesarOrderEvent_shouldCreateNotificationCorrectly_whenDeliveryIsDeliveredAndPaymentPending() {
-        // Arrange
-        OrderEvent orderEvent = new OrderEvent();
-        orderEvent.setOrderId(123L);
-        orderEvent.setUserId(5L);
-        orderEvent.setStatusDeliveryName("Delivered");
-        orderEvent.setPaymentStatusName("Pending");
+    void procesarOrderEvent_shouldCreateNotification_whenDeliveryProcessingAndPaid() {
+        OrderEvent order = buildOrder(1L, 2L, "Processing", "Paid");
 
+        sqsConsumer.procesarOrderEvent(order);
+
+        verifyAndAssertNotification("Pedido en proceso",
+                "Tu pedido #1 está siendo preparado.", order, false);
+    }
+
+    @Test
+    void procesarOrderEvent_shouldCreateNotification_whenDeliveryShippedAndFailed() {
+        OrderEvent order = buildOrder(3L, 4L, "Shipped", "Failed");
+
+        sqsConsumer.procesarOrderEvent(order);
+
+        verifyAndAssertNotification("Pedido enviado",
+                "Tu pedido #3 ha sido enviado. | Estado de pago: Pago fallido", order, false);
+    }
+
+    @Test
+    void procesarOrderEvent_shouldCreateNotification_whenDeliveryDeliveredAndOnHold() {
+        OrderEvent order = buildOrder(5L, 6L, "Delivered", "On Hold");
+
+        sqsConsumer.procesarOrderEvent(order);
+
+        verifyAndAssertNotification("Pedido entregado",
+                "¡Tu pedido #5 ha sido entregado! | Estado de pago: Pago en espera", order, false);
+    }
+
+    @Test
+    void procesarOrderEvent_shouldCreateNotification_whenDeliveryIsUnknown() {
+        OrderEvent order = buildOrder(7L, 8L, "UnknownStatus", "Cancelled");
+
+        sqsConsumer.procesarOrderEvent(order);
+
+        verifyAndAssertNotification("Actualización de pedido",
+                "Tu pedido #7 tiene un nuevo estado: UnknownStatus | Estado de pago: Pago cancelado", order, false);
+    }
+
+    @Test
+    void procesarOrderEvent_shouldCreateNotification_whenDeliveryDeliveredAndPaymentPaid() {
+        OrderEvent order = buildOrder(9L, 10L, "Delivered", "Paid");
+
+        sqsConsumer.procesarOrderEvent(order);
+
+        verifyAndAssertNotification("Pedido entregado",
+                "¡Tu pedido #9 ha sido entregado!", order, false);
+    }
+
+    private OrderEvent buildOrder(Long orderId, Long userId, String deliveryStatus, String paymentStatus) {
+        OrderEvent event = new OrderEvent();
+        event.setOrderId(orderId);
+        event.setUserId(userId);
+        event.setStatusDeliveryName(deliveryStatus);
+        event.setPaymentStatusName(paymentStatus);
+        return event;
+    }
+
+    private void verifyAndAssertNotification(String expectedTitle, String expectedDescStart, OrderEvent order, boolean expectedStatus) {
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
-
-        // Act
-        sqsConsumer.procesarOrderEvent(orderEvent);
-
-        // Assert
         verify(notificationServicePort, times(1)).createNotification(captor.capture());
 
-        Notification notif = captor.getValue();
+        Notification n = captor.getValue();
 
-        assertEquals("Pedido entregado", notif.getTitle());
-        assertTrue(notif.getDescription().contains("¡Tu pedido #123 ha sido entregado!"));
-        assertTrue(notif.getDescription().contains("Estado de pago: Pendiente de pago"));
-        assertEquals(5L, notif.getUserId());
-        assertEquals(123L, notif.getPurchaseId());
-        assertFalse(notif.isStatus());
+        assertEquals(order.getUserId(), n.getUserId());
+        assertEquals(order.getOrderId(), n.getPurchaseId());
+        assertEquals(expectedTitle, n.getTitle());
+        assertTrue(n.getDescription().startsWith(expectedDescStart) || n.getDescription().contains(expectedDescStart));
+        assertEquals(expectedStatus, n.isStatus());
     }
 }
